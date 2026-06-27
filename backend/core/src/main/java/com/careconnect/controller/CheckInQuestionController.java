@@ -6,6 +6,9 @@ import com.careconnect.security.RequirePermission;
 import com.careconnect.dto.CheckInCreateRequestDTO;
 import com.careconnect.dto.CheckInCreateResponseDTO;
 import com.careconnect.dto.QuestionDTO;
+import com.careconnect.dto.SubmitAnswersRequestDTO;
+import com.careconnect.dto.SubmitAnswersResponseDTO;
+import com.careconnect.service.AnswerSubmissionService;
 import com.careconnect.service.CheckInSnapshotService;
 import com.careconnect.service.QuestionService;
 import jakarta.servlet.http.HttpServletRequest;
@@ -23,15 +26,18 @@ public class CheckInQuestionController {
 
     private final QuestionService questionService;
     private final CheckInSnapshotService checkInSnapshotService;
+    private final AnswerSubmissionService answerSubmissionService;
     private final SecurityUtil securityUtil;
 
     public CheckInQuestionController(
             QuestionService questionService,
             CheckInSnapshotService checkInSnapshotService,
+            AnswerSubmissionService answerSubmissionService,
             SecurityUtil securityUtil
     ) {
         this.questionService = questionService;
         this.checkInSnapshotService = checkInSnapshotService;
+        this.answerSubmissionService = answerSubmissionService;
         this.securityUtil = securityUtil;
     }
 
@@ -70,5 +76,20 @@ public class CheckInQuestionController {
         securityUtil.resolveCurrentUser();
         CheckInCreateResponseDTO created = checkInSnapshotService.createCheckInWithSnapshot(request);
         return ResponseEntity.status(HttpStatus.CREATED).body(created);
+    }
+
+    /**
+     * POST /api/checkins/{checkInId}/answers
+     * POST /v1/api/checkins/{checkInId}/answers
+     */
+    @RequirePermission(Permission.COMPLETE_TASKS)
+    @PostMapping("/{checkInId}/answers")
+    public ResponseEntity<SubmitAnswersResponseDTO> submitAnswers(
+            @PathVariable Long checkInId,
+            @Valid @RequestBody SubmitAnswersRequestDTO request
+    ) {
+        securityUtil.resolveCurrentUser();
+        SubmitAnswersResponseDTO result = answerSubmissionService.submitAnswers(checkInId, request);
+        return ResponseEntity.status(HttpStatus.CREATED).body(result);
     }
 }
